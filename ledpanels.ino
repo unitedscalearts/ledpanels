@@ -50,10 +50,15 @@ uint16_t transNoche2Timeout = 30;
 uint16_t noche2Timeout = 60;
 uint16_t transDiaTimeout = 60;
 
-byte diaR = 244, diaG = 164, diaB = 50;
-byte tardeR = 255, tardeG = 100, tardeB = 0;
-byte noche1R = 50, noche1G = 50, noche1B = 70;
-byte noche2R = 5, noche2G = 5, noche2B = 7;
+//byte diaR = 244, diaG = 164, diaB = 50;
+//byte tardeR = 255, tardeG = 100, tardeB = 0;
+//byte noche1R = 50, noche1G = 50, noche1B = 70;
+//byte noche2R = 5, noche2G = 5, noche2B = 7;
+
+byte diaR = 251, diaG = 218, diaB = 127;
+byte tardeR = 255, tardeG = 182, tardeB = 0;
+byte noche1R = 127, noche1G = 127, noche1B = 161;
+byte noche2R = 64, noche2G = 64, noche2B = 70;
 
 byte posRGB[3] = {255, 0, 0};
 byte actRGB[3] = {255, 0, 0};
@@ -72,11 +77,10 @@ boolean transition(byte initR, byte initG, byte initB, byte finalR, byte finalG,
 void flash(byte red, byte green, byte blue);
 void party_1();
 void party_2();
-
+void posTime(uint16_t *timeout, uint8_t buff, uint8_t *bt_state, uint8_t tam);
 
 void setup() {
   Serial.begin(9600);
-  //Serial1.begin(9600);
   leds_init();
   timer2_init();
 }
@@ -96,9 +100,18 @@ void loop() {
 #define GREEN 2
 #define BLUE 3
 #define BRIGHT 4
+#define C_DIA 5
+#define C_TARDE 6
+#define C_NOCHE1 7
+#define C_NOCHE2 8
+#define CT_TARDE 9
+#define CT_NOCHE1 10
+#define CT_NOCHE2 11
+#define CT_DIA 12
+
 
 void update_bt () {
-  static char buff = ' ';
+  static char buff = 0;
   static uint8_t bt_state = REPOSO;
   if (Serial.available()) {
     buff = Serial.read();
@@ -109,11 +122,24 @@ void update_bt () {
       else if (buff == 'g') bt_state = GREEN;
       else if (buff == 'b') bt_state = BLUE;
       else if (buff == 'f') bt_state = BRIGHT;
-      else if (buff == 'c') state = CIRCUITO;
+      else if (buff == 'q') bt_state = C_DIA;
+      else if (buff == 'w') bt_state = C_TARDE;
+      else if (buff == 't') bt_state = C_NOCHE1;
+      else if (buff == 'y') bt_state = C_NOCHE2;
+      else if (buff == 'u') bt_state = CT_TARDE;
+      else if (buff == 'i') bt_state = CT_NOCHE1;
+      else if (buff == 'o') bt_state = CT_NOCHE2;
+      else if (buff == 'p') bt_state = CT_DIA;
+      else if (buff == 'c') {
+        state = CIRCUITO;
+        colorCircuito[0] = diaR;
+        colorCircuito[1] = diaG;
+        colorCircuito[2] = diaB;
+      }
       else if (buff == 'e') state = ESTATICO;
       else if (buff == 'x') state = FLASH;
       else if (buff == 'z') state = PARTY_1;
-      else if (buff == 'y') state = PARTY_2;
+      else if (buff == 'v') state = PARTY_2;
     }
     else if (bt_state == RED) {
       posRGB[0] = buff;
@@ -128,15 +154,34 @@ void update_bt () {
       bt_state = REPOSO;
     }
     else if (bt_state == BRIGHT) {
-      //Serial.println(strip.getBrightness());
       posBrightness = buff;
       bt_state = REPOSO;
     }
-    //Serial.print(" // BT STATE : ");
-    //Serial.println(bt_state);
+    else if (bt_state == C_DIA) posTime(&diaTimeout, buff, &bt_state, 2);
+    else if (bt_state == C_TARDE) posTime(&tardeTimeout, buff, &bt_state, 2);
+    else if (bt_state == C_NOCHE1) posTime(&noche1Timeout, buff, &bt_state, 2);
+    else if (bt_state == C_NOCHE2) posTime(&noche2Timeout, buff, &bt_state, 2);
+    else if (bt_state == CT_TARDE) posTime(&transTardeTimeout, buff, &bt_state, 2);
+    else if (bt_state == CT_NOCHE1) posTime(&transNoche1Timeout, buff, &bt_state, 2);
+    else if (bt_state == CT_NOCHE2) posTime(&transNoche2Timeout, buff, &bt_state, 2);
+    else if (bt_state == CT_DIA) posTime(&transDiaTimeout, buff, &bt_state, 2);
   }
 }
 
+void posTime(uint16_t *timeout, uint8_t buff, uint8_t *bt_state, uint8_t tam) {
+  static uint8_t bytes[8] = {};
+  static uint8_t aux = 0;
+  bytes[aux] = (uint8_t) buff;
+  aux++;
+  if(aux == tam) {
+    aux = 0;
+    *bt_state = REPOSO;
+    *timeout = 0;
+    for (uint8_t i = 0; i < tam; i++) {
+      *timeout |= (uint16_t) bytes[i] << 8*i;
+    }
+  }
+}
 
 void update_leds() {
    if(!timer2_flag) return;
@@ -242,6 +287,9 @@ boolean timeout(uint16_t tiempo) {
 }
 
 boolean transition(uint8_t iR, uint8_t iG, uint8_t iB, uint8_t fR, uint8_t fG, uint8_t fB, uint16_t tiempo) {
+  ///////////////////////////////////////////////
+  /// Tratando de ahorrar los 3 bytes por led ///
+  ///////////////////////////////////////////////
   static uint16_t count = 0;
   boolean res = false;
   count++;
@@ -249,6 +297,31 @@ boolean transition(uint8_t iR, uint8_t iG, uint8_t iB, uint8_t fR, uint8_t fG, u
    setPixel(i, colorCircuito[0], colorCircuito[1], colorCircuito[2]);
    res = update_color(iR, iG, iB, fR, fG, fB, tiempo);
   }
+  ///////////////////////////////////////////
+  /// Solucion utilizando 3 bytes por led ///
+  ///////////////////////////////////////////
+  /*
+  static uint16_t count = 0;
+  static uint16_t count2 = 0;
+  boolean res = false;
+  count++;
+  setPixel(0, colorCircuito[0], colorCircuito[1], colorCircuito[2]);
+  res = update_color(iR, iG, iB, fR, fG, fB, tiempo);
+  if(count2 == DEL_TRANS) {
+    count2 = 0;
+    for(uint16_t j = 0; j < VEL_TRANS; j++) {    
+      for(uint16_t i = NUM_LEDS - 1; i > 0; i--) {
+        r[i] = r[i - 1];
+        g[i] = g[i - 1];
+        b[i] = b[i - 1];
+      }
+    }
+  }
+  else count2++;
+  */
+  ////////////////////////////////////////////
+  ////////////////////////////////////////////
+  ////////////////////////////////////////////
   return res;
   if (count == (1000/timer2_ticks)*tiempo) {
     count = 0;
@@ -258,7 +331,7 @@ boolean transition(uint8_t iR, uint8_t iG, uint8_t iB, uint8_t fR, uint8_t fG, u
 }
 
 boolean update_color(uint8_t iR, uint8_t iG, uint8_t iB, uint8_t fR, uint8_t fG, uint8_t fB, uint16_t tiempo) {
-  /*Serial.print(" dR: ");
+  Serial.print(" dR: ");
   Serial.print(dR);
   Serial.print(" dG: ");
   Serial.print(dG);
@@ -270,7 +343,13 @@ boolean update_color(uint8_t iR, uint8_t iG, uint8_t iB, uint8_t fR, uint8_t fG,
   Serial.print(auxG);
   Serial.print(" auxB: ");
   Serial.print(auxB);
-  Serial.println("");*/
+  Serial.print(" R: ");
+  Serial.print(colorCircuito[0]);
+  Serial.print(" G: ");
+  Serial.print(colorCircuito[1]);
+  Serial.print(" B: ");
+  Serial.print(colorCircuito[2]);
+  Serial.println("");
   if (fR - iR > 0) dR = (uint16_t)((tiempo * (1000/timer2_ticks)) / (fR - iR));
   else dR = (uint16_t)((tiempo * (1000/timer2_ticks)) / (iR - fR));
 
@@ -336,8 +415,33 @@ void party_1() {
   else if (count == 1500) count = 0;
 }
 
+/*
+               5         10        15        20        25      29
+000  o o o o o o o o o o o o o o o o o o o o o o o o o o o o o o
+030  o x x x x x o o x o o o x o o x x x x x o o x x x x x o o o
+060  o x o o o x o o x o o o x o o o o x o o o o x o o o x o o o
+090  o x o o o x o o x o o o x o o o o x o o o o x o o o x o o o
+120  o x x x x x o o x o o o x o o o o x o o o o x o o o x o o o
+150  o x o o o o o o x o o o x o o o o x o o o o x o o o x o o o
+180  o x o o o o o o x o o o x o o o o x o o o o x o o o x o o o
+210  o x o o o o o o x o o o x o o o o x o o o o x o o o x o o o
+240  o x o o o o o o x x x x x o o o o x o o o o x x x x x o o o
+270  o o o o o o o o o o o o o o o o o o o o o o o o o o o o o o
+
+*/
+
 void party_2() {
-  
+  setAll(0,0,0);
+  for (uint16_t i = 0; i < NUM_LEDS; i++) {
+    if ( (i >= 31 && i <=35) || i == 38 || i == 42 || (i >= 45 && i <=49) || (i >= 52 && i <=56) ) setPixel(i, 255, 0, 0);
+    else if ( i == 61 || i == 65 || i == 68 || i == 72 || i == 77 || i == 82 || i == 86  ) setPixel(i, 255, 0, 0);
+    else if ( i == 91 || i == 95 || i == 98 || i == 102 || i == 107 || i == 112 || i == 116  ) setPixel(i, 255, 0, 0);
+    else if ( (i >= 121 && i <=125) || i == 128 || i == 132 || i == 137 || i == 142 || i == 146  ) setPixel(i, 255, 0, 0);
+    else if ( i == 151 || i == 155 || i == 158 || i == 162 || i == 167 || i == 172 || i == 176  ) setPixel(i, 255, 0, 0);
+    else if ( i == 181 || i == 185 || i == 188 || i == 192 || i == 197 || i == 202 || i == 206  ) setPixel(i, 255, 0, 0);
+    else if ( i == 211 || i == 215 || i == 218 || i == 222 || i == 227 || i == 232 || i == 236  ) setPixel(i, 255, 0, 0);
+    else if ( i == 241 || i == 245 || i == 248 || i == 252 || i == 257 || i == 262 || i == 266  ) setPixel(i, 255, 0, 0);
+  }
 }
 
 void leds_init() {
@@ -380,31 +484,16 @@ void showStrip() {
 }
 
 void setPixel(int Pixel, byte red, byte green, byte blue) {
-  /*Serial.print("S: ");
-  Serial.print(state);
-  Serial.print(" - P: ");
-  Serial.print(Pixel);
-  Serial.print(" - r: ");
-  Serial.print(red);
-  Serial.print(" - g: ");
-  Serial.print(green);
-  Serial.print("- b: ");
-  Serial.print(blue);
-  Serial.println("");*/
 #ifdef ADAFRUIT_NEOPIXEL_H
   // NeoPixel
-  strip.setPixelColor(Pixel, strip.Color(red, green, blue));
+  strip.setPixelColor(Pixel, strip.Color(pgm_read_byte(&gamma8[red]), pgm_read_byte(&gamma8[green]), pgm_read_byte(&gamma8[blue])));
+  //strip.setPixelColor(Pixel, strip.Color(red, green, blue));
 #endif
 #ifndef ADAFRUIT_NEOPIXEL_H
   // FastLED
   leds[Pixel].r = pgm_read_byte(&gamma8[red]);
   leds[Pixel].g = pgm_read_byte(&gamma8[green]);
   leds[Pixel].b = pgm_read_byte(&gamma8[blue]);
-  // EXPERIMENTAL
-  //ant_colorRGB[0]=red;
-  //ant_colorRGB[1]=green;
-  //ant_colorRGB[2]=blue;
-  //
   //leds[Pixel].r = red;
   //leds[Pixel].g = green;
   //leds[Pixel].b = blue;
@@ -412,11 +501,9 @@ void setPixel(int Pixel, byte red, byte green, byte blue) {
 }
 
 void setAll(byte red, byte green, byte blue) {
-
   for (int i = 0; i < NUM_LEDS; i++ ) {
     setPixel(i, red, green, blue);
   }
-  //showStrip();
 }
 
 
