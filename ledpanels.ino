@@ -41,6 +41,9 @@ boolean gFlag = false;
 uint16_t auxR, auxG, auxB;
 uint16_t dR, dG, dB;
 
+
+#define VEL_TRANS 1
+#define DEL_TRANS 2
 uint16_t diaTimeout = 36;
 uint16_t transTardeTimeout = 30;
 uint16_t tardeTimeout = 60;
@@ -88,8 +91,8 @@ void setup() {
 void loop() {
   update_bt();
   update_leds();
-  //Serial.print("State: ");
-  //Serial.print(state);
+  Serial.print("State: ");
+  Serial.print(state);
   //Serial.print(" - BT State: ");
   //Serial.print(bt_state);
   //Serial.println("");
@@ -290,27 +293,34 @@ boolean transition(uint8_t iR, uint8_t iG, uint8_t iB, uint8_t fR, uint8_t fG, u
   ///////////////////////////////////////////////
   /// Tratando de ahorrar los 3 bytes por led ///
   ///////////////////////////////////////////////
-  static uint16_t count = 0;
+  /*static uint16_t count = 0;
   boolean res = false;
   count++;
   for(uint16_t i = 0; i <NUM_LEDS; i++) {
    setPixel(i, colorCircuito[0], colorCircuito[1], colorCircuito[2]);
    res = update_color(iR, iG, iB, fR, fG, fB, tiempo);
-  }
+  }*/
   ///////////////////////////////////////////
   /// Solucion utilizando 3 bytes por led ///
   ///////////////////////////////////////////
-  /*
-  static uint16_t count = 0;
+  
+  //static uint16_t count = 0;
   static uint16_t count2 = 0;
+  static byte r[NUM_LEDS] = {};
+  static byte g[NUM_LEDS] = {};
+  static byte b[NUM_LEDS] = {};
   boolean res = false;
-  count++;
+  //count++;
   setPixel(0, colorCircuito[0], colorCircuito[1], colorCircuito[2]);
+  r[0] = colorCircuito[0];
+  g[0] = colorCircuito[1];
+  b[0] = colorCircuito[2];
   res = update_color(iR, iG, iB, fR, fG, fB, tiempo);
   if(count2 == DEL_TRANS) {
     count2 = 0;
-    for(uint16_t j = 0; j < VEL_TRANS; j++) {    
+    for(uint16_t j = 0; j < VEL_TRANS; j++) {
       for(uint16_t i = NUM_LEDS - 1; i > 0; i--) {
+        setPixel(i, r[i], g[i], b[i]);
         r[i] = r[i - 1];
         g[i] = g[i - 1];
         b[i] = b[i - 1];
@@ -318,16 +328,16 @@ boolean transition(uint8_t iR, uint8_t iG, uint8_t iB, uint8_t fR, uint8_t fG, u
     }
   }
   else count2++;
-  */
+  if (r[0] != r[NUM_LEDS]) res = false;
   ////////////////////////////////////////////
   ////////////////////////////////////////////
   ////////////////////////////////////////////
   return res;
-  if (count == (1000/timer2_ticks)*tiempo) {
+  /*if (count == (1000/timer2_ticks)*tiempo) {
     count = 0;
     return true;
   }
-  return false;
+  return false;*/
 }
 
 boolean update_color(uint8_t iR, uint8_t iG, uint8_t iB, uint8_t fR, uint8_t fG, uint8_t fB, uint16_t tiempo) {
