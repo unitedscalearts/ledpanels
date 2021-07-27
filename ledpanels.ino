@@ -3,7 +3,7 @@
 extern const uint8_t gamma8[];
 
 #define LED_PIN     5
-#define NUM_LEDS    15
+#define NUM_LEDS    300
 #define LED_TYPE    WS2812B
 #define COLOR_ORDER RGB
 #define BRIGHTNESS 100
@@ -79,7 +79,7 @@ boolean timeout(uint16_t timeout);
 boolean transition(byte initR, byte initG, byte initB, byte finalR, byte finalG, byte finalB, uint16_t tiempo);
 void flash(byte red, byte green, byte blue);
 void party_1();
-void party_2();
+void party_2(byte red, byte green, byte blue);
 void posTime(uint16_t *timeout, uint8_t buff, uint8_t *bt_state, uint8_t tam);
 
 void setup() {
@@ -256,7 +256,7 @@ void update_leds() {
       break;
 
     case PARTY_2:
-      party_2();
+      party_2(actRGB[0], actRGB[1], actRGB[2]);
       break;
 
     default:
@@ -341,7 +341,7 @@ boolean transition(uint8_t iR, uint8_t iG, uint8_t iB, uint8_t fR, uint8_t fG, u
 }
 
 boolean update_color(uint8_t iR, uint8_t iG, uint8_t iB, uint8_t fR, uint8_t fG, uint8_t fB, uint16_t tiempo) {
-  Serial.print(" dR: ");
+  /*Serial.print(" dR: ");
   Serial.print(dR);
   Serial.print(" dG: ");
   Serial.print(dG);
@@ -359,7 +359,7 @@ boolean update_color(uint8_t iR, uint8_t iG, uint8_t iB, uint8_t fR, uint8_t fG,
   Serial.print(colorCircuito[1]);
   Serial.print(" B: ");
   Serial.print(colorCircuito[2]);
-  Serial.println("");
+  Serial.println("");*/
   if (fR - iR > 0) dR = (uint16_t)((tiempo * (1000/timer2_ticks)) / (fR - iR));
   else dR = (uint16_t)((tiempo * (1000/timer2_ticks)) / (iR - fR));
 
@@ -440,17 +440,18 @@ void party_1() {
 
 */
 
-void party_2() {
+void party_2(byte red, byte green, byte blue) {
   setAll(0,0,0);
   for (uint16_t i = 0; i < NUM_LEDS; i++) {
-    if ( (i >= 31 && i <=35) || i == 38 || i == 42 || (i >= 45 && i <=49) || (i >= 52 && i <=56) ) setPixel(i, 255, 0, 0);
-    else if ( i == 61 || i == 65 || i == 68 || i == 72 || i == 77 || i == 82 || i == 86  ) setPixel(i, 255, 0, 0);
-    else if ( i == 91 || i == 95 || i == 98 || i == 102 || i == 107 || i == 112 || i == 116  ) setPixel(i, 255, 0, 0);
-    else if ( (i >= 121 && i <=125) || i == 128 || i == 132 || i == 137 || i == 142 || i == 146  ) setPixel(i, 255, 0, 0);
-    else if ( i == 151 || i == 155 || i == 158 || i == 162 || i == 167 || i == 172 || i == 176  ) setPixel(i, 255, 0, 0);
-    else if ( i == 181 || i == 185 || i == 188 || i == 192 || i == 197 || i == 202 || i == 206  ) setPixel(i, 255, 0, 0);
-    else if ( i == 211 || i == 215 || i == 218 || i == 222 || i == 227 || i == 232 || i == 236  ) setPixel(i, 255, 0, 0);
-    else if ( i == 241 || i == 245 || i == 248 || i == 252 || i == 257 || i == 262 || i == 266  ) setPixel(i, 255, 0, 0);
+    if ( (i >= 31 && i <=35) || i == 38 || i == 42 || (i >= 45 && i <=49) || (i >= 52 && i <=56) ) setPixel(i, red, green, blue);
+    else if ( i == 61 || i == 65 || i == 68 || i == 72 || i == 77 || i == 82 || i == 86  ) setPixel(i, red, green, blue);
+    else if ( i == 91 || i == 95 || i == 98 || i == 102 || i == 107 || i == 112 || i == 116  ) setPixel(i, red, green, blue);
+    else if ( (i >= 121 && i <=125) || i == 128 || i == 132 || i == 137 || i == 142 || i == 146  ) setPixel(i, red, green, blue);
+    else if ( i == 151 || i == 158 || i == 162 || i == 167 || i == 172 || i == 176  ) setPixel(i, red, green, blue);
+    else if ( i == 181 || i == 188 || i == 192 || i == 197 || i == 202 || i == 206  ) setPixel(i, red, green, blue);
+    else if ( i == 211 || i == 218 || i == 222 || i == 227 || i == 232 || i == 236  ) setPixel(i, red, green, blue);
+    else if ( i == 241 || i == 257 ) setPixel(i, red, green, blue);
+    else if ( (i >= 248 && i <=252) || (i >= 262 && i <=266)) setPixel(i, red, green, blue);
   }
 }
 
