@@ -71,7 +71,7 @@ byte colorCircuito[3] = {diaR, diaG, diaB};
 
 void showStrip();
 void setPixelGammaHue(int Pixel, byte red, byte green, byte blue);
-void setPixel_notHue(int Pixel, byte red, byte green, byte blue);
+void setPixel(int Pixel, byte red, byte green, byte blue);
 void setAllGammaHue(byte red, byte green, byte blue);
 void setAll(byte red, byte green, byte blue);
 void update_bt();
@@ -337,7 +337,7 @@ boolean transition(uint8_t iR, uint8_t iG, uint8_t iB, uint8_t fR, uint8_t fG, u
   ///////////////////////////////////////////
   boolean res = false;
   for(uint16_t i = 0; i < NUM_LEDS; i++) {
-    setPixel_notHue(i, colorCircuito[0], colorCircuito[1], colorCircuito[2]); 
+    setPixel(i, colorCircuito[0], colorCircuito[1], colorCircuito[2]); 
   }
   res = update_color(iR, iG, iB, fR, fG, fB, tiempo);
 
@@ -523,7 +523,7 @@ void setPixelGammaHue(int Pixel, byte red, byte green, byte blue) {
 #endif
 }
 
-void setPixel_notHue(int Pixel, byte red, byte green, byte blue) {
+void setPixel(int Pixel, byte red, byte green, byte blue) {
 #ifdef ADAFRUIT_NEOPIXEL_H
   // NeoPixel
   strip.setPixelColor(Pixel, strip.Color(red, green, blue));
@@ -546,7 +546,7 @@ void setAllGammaHue(byte red, byte green, byte blue) {
 
 void setAll(byte red, byte green, byte blue) {
   for (int i = 0; i < NUM_LEDS; i++ ) {
-    setPixel_notHue(i, red, green, blue);
+    setPixel(i, red, green, blue);
   }
 }
 
