@@ -30,9 +30,11 @@ void timer2_init();
 #define FLASH 11
 #define PARTY_1 12
 #define PARTY_2 13
+#define PARTY_3 14
+#define POLICE 15
 
 // Variables Globales
-volatile uint8_t state = ESTATICO;
+volatile uint8_t state = POLICE;
 uint8_t timer2_ticks = 5;                  // Frecuencia de actualizacion (1 ~ 1ms)
 uint16_t timer2_count = 0;
 boolean timer2_flag = false;
@@ -82,6 +84,10 @@ boolean transition(byte initR, byte initG, byte initB, byte finalR, byte finalG,
 void flash(byte red, byte green, byte blue);
 void party_1();
 void party_2(byte red, byte green, byte blue);
+void update_rainbow(byte *red, byte *green, byte *blue);
+void rainbow_cycle(byte colorVel = 1, byte moveVel = 0);
+void text(byte red, byte green, byte blue);
+void police();
 void posTime(uint16_t *timeout, uint8_t buff, uint8_t *bt_state, uint8_t tam);
 
 void setup() {
@@ -258,7 +264,16 @@ void update_leds() {
       break;
 
     case PARTY_2:
-      party_2(actRGB[0], actRGB[1], actRGB[2]);
+      //party_2(actRGB[0], actRGB[1], actRGB[2]);
+      text(actRGB[0], actRGB[1], actRGB[2]);
+      break;
+
+    case POLICE:
+      police();
+      break;
+
+    case PARTY_3:
+      rainbow_cycle(13, 1);
       break;
 
     default:
@@ -437,6 +452,175 @@ void party_1() {
   else if (count == 1500) count = 0;
 }
 
+///////////
+// Texto //
+///////////
+
+const bool a[25] = {  0, 0, 1, 0, 0,
+                      0, 1, 0, 1, 0,
+                      1, 0, 0, 0, 1,
+                      1, 1, 1, 1, 1,
+                      1, 0, 0, 0, 1 };
+
+const bool e[25] = {  1, 1, 1, 1, 1,
+                      1, 0, 0, 0, 0,
+                      1, 1, 1, 0, 0,
+                      1, 0, 0, 0, 0,
+                      1, 1, 1, 1, 1 };
+
+const bool g[25] = {  0, 1, 1, 1, 1,
+                      1, 0, 0, 0, 0,
+                      1, 0, 0, 1, 1,
+                      1, 0, 0, 0, 1,
+                      0, 1, 1, 1, 1 };
+
+const bool j[25] = {  1, 1, 1, 1, 1,
+                      0, 0, 0, 1, 0,
+                      0, 0, 0, 1, 0,
+                      1, 0, 0, 1, 0,
+                      0, 1, 1, 0, 0 };
+
+const bool l[25] = {  1, 0, 0, 0, 0,
+                      1, 0, 0, 0, 0,
+                      1, 0, 0, 0, 0,
+                      1, 0, 0, 0, 0,
+                      1, 1, 1, 1, 1 };
+
+const bool o[25] = {  0, 1, 1, 1, 0,
+                      1, 0, 0, 0, 1,
+                      1, 0, 0, 0, 1,
+                      1, 0, 0, 0, 1,
+                      0, 1, 1, 1, 0 };
+
+const bool p[25] = {  1, 1, 1, 1, 0,
+                      1, 0, 0, 0, 1,
+                      1, 1, 1, 1, 0,
+                      1, 0, 0, 0, 0,
+                      1, 0, 0, 0, 0 };
+
+const bool q[25] = {  0, 1, 1, 1, 0,
+                      1, 0, 0, 0, 1,
+                      1, 0, 1, 0, 1,
+                      1, 0, 0, 1, 0,
+                      0, 1, 1, 0, 1 };
+
+const bool r[25] = {  1, 1, 1, 1, 0,
+                      1, 0, 0, 0, 1,
+                      1, 1, 1, 1, 0,
+                      1, 0, 0, 0, 1,
+                      1, 0, 0, 0, 1 };
+
+const bool s[25] = {  0, 1, 1, 1, 1,
+                      1, 0, 0, 0, 0,
+                      0, 1, 1, 1, 0,
+                      0, 0, 0, 0, 1,
+                      1, 1, 1, 1, 0 };
+
+const bool t[25] = {  1, 1, 1, 1, 1,
+                      0, 0, 1, 0, 0,
+                      0, 0, 1, 0, 0,
+                      0, 0, 1, 0, 0,
+                      0, 0, 1, 0, 0 };
+
+const bool u[25] = {  1, 0, 0, 0, 1,
+                      1, 0, 0, 0, 1,
+                      1, 0, 0, 0, 1,
+                      1, 0, 0, 0, 1,
+                      0, 1, 1, 1, 0 };
+
+const bool bs[25] = { 0, 0, 0, 0, 0,
+                      0, 0, 0, 0, 0,
+                      0, 0, 0, 0, 0,
+                      0, 0, 0, 0, 0,
+                      0, 0, 0, 0, 0 };
+
+void text(byte red, byte green, byte blue) {
+  setAll(0, 0, 0);
+  uint16_t des = 0;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    setPixelGammaHue(pos+des, p[pos]*red, p[pos]*green, p[pos]*blue);
+  }
+  des = 6;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    setPixelGammaHue(pos+des, u[pos]*red, u[pos]*green, u[pos]*blue);
+  }
+  des = 12;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    setPixelGammaHue(pos+des, t[pos]*red, t[pos]*green, t[pos]*blue);
+  }
+  des = 18;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    setPixelGammaHue(pos+des, o[pos]*red, o[pos]*green, o[pos]*blue);
+  }
+  des = 150;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    setPixelGammaHue(pos+des, q[pos]*red, q[pos]*green, q[pos]*blue);
+  }
+  des = 159;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    setPixelGammaHue(pos+des, l[pos]*red, l[pos]*green, l[pos]*blue);
+  }
+  des = 165;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    setPixelGammaHue(pos+des, e[pos]*red, e[pos]*green, e[pos]*blue);
+  }
+  des = 171;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    setPixelGammaHue(pos+des, e[pos]*red, e[pos]*green, e[pos]*blue);
+  }
+  /*
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    setPixelGammaHue(pos+des, j[pos]*red, j[pos]*green, j[pos]*blue);
+  }
+  des = 6;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    setPixelGammaHue(pos+des, o[pos]*red, o[pos]*green, o[pos]*blue);
+  }
+  des = 12;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    setPixelGammaHue(pos+des, r[pos]*red, r[pos]*green, r[pos]*blue);
+  }
+  des = 18;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    setPixelGammaHue(pos+des, g[pos]*red, g[pos]*green, g[pos]*blue);
+  }
+  des = 24;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    setPixelGammaHue(pos+des, e[pos]*red, e[pos]*green, e[pos]*blue);
+  }
+  
+  des = 156;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    setPixelGammaHue(pos+des, u[pos]*red, u[pos]*green, u[pos]*blue);
+  }
+  des = 162;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    setPixelGammaHue(pos+des, s[pos]*red, s[pos]*green, s[pos]*blue);
+  }
+  des = 168;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    setPixelGammaHue(pos+des, a[pos]*red, a[pos]*green, a[pos]*blue);
+  }*/
+}
+
+
+
 /*
                5         10        15        20        25      29
 000  o o o o o o o o o o o o o o o o o o o o o o o o o o o o o o
@@ -466,6 +650,169 @@ void party_2(byte red, byte green, byte blue) {
     else if ( (i >= 248 && i <=252) || (i >= 262 && i <=266)) setPixelGammaHue(i, red, green, blue);
   }
 }
+
+// UPDATE_RAINBOW
+void update_rainbow(byte *red, byte *green, byte *blue) {
+  #define RED     0
+  #define D_RED   1
+  #define GREEN   2
+  #define D_GREEN 3
+  #define BLUE    4
+  #define D_BLUE  5
+  static uint8_t r_estado = RED;
+  if (r_estado == RED) {
+    if ((*red) == 255) r_estado = D_BLUE;
+    else (*red)++;
+  }
+  if (r_estado == D_BLUE) {
+    if (!(*blue)) r_estado = GREEN;
+    else (*blue)--;
+  }
+  if (r_estado == GREEN) {
+    if ((*green) == 255) r_estado = D_RED;
+    else (*green)++;
+  }
+  if (r_estado == D_RED) {
+    if (!(*red)) r_estado = BLUE;
+    else (*red)--;
+  }
+  if (r_estado == BLUE) {
+    if ((*blue) == 255) r_estado = D_GREEN;
+    else (*blue)++;
+  }
+  if (r_estado == D_GREEN) {
+    if (!(*green)) r_estado = RED;
+    else (*green)--;
+  }
+}
+
+// Rainbow Cycle
+void rainbow_cycle(byte colorVel, byte moveVel) {
+  static byte red = 255, green = 0, blue = 0;
+  static uint16_t cycleCount = 0;
+  if (cycleCount == moveVel) {
+    cycleCount = 0;
+    for (uint16_t j = 0; j < NUM_LEDS; j++) {
+      for (uint16_t i = 0; i < colorVel; i++) {
+        update_rainbow(&red, &green, &blue);
+      }
+      setPixel(j, red, green, blue);
+    }
+  }
+  else {
+    cycleCount++;
+  }
+}
+
+const boolean barra[100] = {  1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                              1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                              1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                              1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                              1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                              1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                              1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                              1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                              1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                              1, 1, 1, 1, 1, 1, 1, 1, 1, 1  };
+
+void barra_azul (uint16_t des) {
+  for(uint16_t pos = 0; pos < 100; pos++) {
+    if (!(pos%10) && pos) des+= 20;
+    setPixelGammaHue(pos+des, barra[pos]*0, barra[pos]*0, barra[pos]*255);
+  }
+}
+
+void barra_roja (uint16_t des) {
+  for(uint16_t pos = 0; pos < 100; pos++) {
+    if (!(pos%10) && pos) des+= 20;
+    setPixelGammaHue(pos+des, barra[pos]*255, barra[pos]*0, barra[pos]*0);
+  }
+}
+
+void barra_blanca (uint16_t des) {
+  for(uint16_t pos = 0; pos < 100; pos++) {
+    if (!(pos%10) && pos) des+= 20;
+    setPixelGammaHue(pos+des, barra[pos]*255, barra[pos]*255, barra[pos]*255);
+  }
+}
+
+boolean p_delay(uint16_t del) {
+  static uint16_t count = 0;
+  if(count == del) {
+    count = 0;
+    return true;
+  }
+  count++;
+  return false;
+}
+
+void police() {
+  #define P_BLUE 0
+  #define P_RED 1
+  #define P_STROBE 2
+  static uint8_t pol_state = P_BLUE;
+  static uint16_t count = 0;
+  static uint16_t flash_count = 0;
+  static uint8_t rep_count = 0;
+  uint16_t des = 0;
+  count++;
+  if (pol_state == P_BLUE) {
+    if (flash_count < 4) {
+      if(count == 1) barra_azul(0);
+      else if(count == 3) setAll(0, 0, 0);
+      else if(count == 8) {
+       count = 0;
+       flash_count++;
+      }
+    }
+    else if (flash_count == 4) {
+      if(p_delay(8)) {
+        pol_state = P_RED;
+        flash_count = 0; 
+        count = 0;
+      }
+    }
+  }
+  else if (pol_state == P_RED) {
+    if (flash_count < 4) {
+      if(count == 1) barra_roja(20);
+      else if(count == 3) setAll(0, 0, 0);
+      else if(count == 8) {
+        count = 0;
+        flash_count++;
+      }
+    }
+    else if (flash_count == 4) {
+      if(p_delay(8)) {
+        pol_state = P_BLUE;
+        rep_count++;
+        flash_count = 0;
+        count = 0;
+      }
+      if(rep_count == 4) {
+        rep_count = 0;
+        pol_state = P_STROBE;
+      }
+    }
+  }
+  else if (pol_state == P_STROBE) {
+    if(count == 1) setAll(255, 255, 255);
+    else if(count == 2) setAll(0, 0, 0);
+    else if(count == 5) {
+      count = 0;
+      flash_count++;
+    }
+    if (flash_count == 12) {
+      pol_state = P_BLUE;
+      flash_count = 0;
+    }    
+  }
+  //Serial.println(count);
+  //barra_azul(0);
+  //barra_roja(20);
+  //barra_blanca(10);
+}
+
 
 void leds_init() {
   strip.begin();
