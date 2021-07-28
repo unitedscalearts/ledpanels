@@ -32,9 +32,11 @@ void timer2_init();
 #define PARTY_2 13
 #define PARTY_3 14
 #define POLICE 15
+#define RAINBOW 16
+#define USA 17
 
 // Variables Globales
-volatile uint8_t state = ESTATICO;
+volatile uint8_t state = POLICE;
 uint8_t timer2_ticks = 5;                  // Frecuencia de actualizacion (1 ~ 1ms)
 uint16_t timer2_count = 0;
 boolean timer2_flag = false;
@@ -84,7 +86,10 @@ boolean transition(byte initR, byte initG, byte initB, byte finalR, byte finalG,
 void flash(byte red, byte green, byte blue);
 void party_1();
 void party_2(byte red, byte green, byte blue);
+void party_3(byte red, byte green, byte blue);
+void flash_text(byte red, byte green, byte blue);
 void update_rainbow(byte *red, byte *green, byte *blue);
+void rainbow(byte vel);
 void rainbow_cycle(byte colorVel = 1, byte moveVel = 0);
 void text(byte red, byte green, byte blue);
 void police();
@@ -151,7 +156,10 @@ void update_bt () {
       else if (buff == 'x') state = FLASH;
       else if (buff == 'z') state = PARTY_1;
       else if (buff == 'v') state = PARTY_2;
+      else if (buff == 's') state = PARTY_3;
       else if (buff == 'n') state = POLICE;
+      else if (buff == 'm') state = RAINBOW;
+      else if (buff == 'a') state = USA;
     }
     else if (bt_state == RED) {
       posRGB[0] = buff;
@@ -269,12 +277,21 @@ void update_leds() {
       text(actRGB[0], actRGB[1], actRGB[2]);
       break;
 
+    case PARTY_3:
+      party_3(actRGB[0], actRGB[1], actRGB[2]);
+      break;
+
     case POLICE:
       police();
       break;
 
-    case PARTY_3:
-      rainbow_cycle(13, 1);
+    case RAINBOW:
+      //rainbow_cycle(10, 1);
+      rainbow(1);
+      break;
+
+    case USA:
+      usa();
       break;
 
     default:
@@ -687,17 +704,37 @@ void update_rainbow(byte *red, byte *green, byte *blue) {
   }
 }
 
+// RAINBOW
+void rainbow(byte vel) {
+  static byte red = 0, green = 0, blue = 0;
+  for (uint16_t i = 0; i < vel; i++) {
+     update_rainbow(&red, &green, &blue);
+  }
+  setAllGammaHue(red, green, blue);
+}
+
 // Rainbow Cycle
+byte r_red[NUM_LEDS/10] = {};
+byte r_green[NUM_LEDS/10] = {};
+byte r_blue[NUM_LEDS/10] = {};
 void rainbow_cycle(byte colorVel, byte moveVel) {
   static byte red = 255, green = 0, blue = 0;
   static uint16_t cycleCount = 0;
   if (cycleCount == moveVel) {
     cycleCount = 0;
-    for (uint16_t j = 0; j < NUM_LEDS; j++) {
-      for (uint16_t i = 0; i < colorVel; i++) {
-        update_rainbow(&red, &green, &blue);
+    for (uint16_t i = 0; i < colorVel; i++) {
+      update_rainbow(&red, &green, &blue);
+    }
+    r_red[0] = red;
+    r_green[0] = green;
+    r_blue[0] = blue;
+    for (uint16_t j = 0; j < NUM_LEDS/10; j++) {
+      r_red[j+1] = r_red[j];
+      r_green[j+1] = r_green[j];
+      r_blue[j+1] = r_blue[j];
+      for(uint16_t x = 0; x < 10; x++) {
+        setPixel(j+x*30, r_red[j], r_green[j], r_blue[j]); 
       }
-      setPixel(j, red, green, blue);
     }
   }
   else {
@@ -767,11 +804,9 @@ void police() {
       }
     }
     else if (flash_count == 6) {
-      if(p_delay(15)) {
-        pol_state = P_RED;
-        flash_count = 0; 
-        count = 0;
-      }
+      pol_state = P_RED;
+      flash_count = 0; 
+      count = 0;
     }
   }
   else if (pol_state == P_RED) {
@@ -784,15 +819,13 @@ void police() {
       }
     }
     else if (flash_count == 6) {
+      pol_state = P_BLUE;
+      rep_count++;
+      flash_count = 0;
+      count = 0;
       if(rep_count == 4) {
         rep_count = 0;
         pol_state = P_STROBE;
-        flash_count = 0;
-        count = 0;
-      }
-      if(p_delay(15)) {
-        pol_state = P_BLUE;
-        rep_count++;
         flash_count = 0;
         count = 0;
       }
@@ -809,6 +842,121 @@ void police() {
       pol_state = P_BLUE;
       flash_count = 0;
     }    
+  }
+}
+
+void police2() {
+  #define P_BLUE 0
+  #define P_RED 1
+  #define P_STROBE 2
+  static uint8_t pol_state = P_BLUE;
+  static uint16_t count = 0;
+  
+}
+
+/*
+               5         10        15        20        25      29
+000  o o o o o o o o o o o o o o o o o o r r r r r r r r r r r r
+030  o b o o o b o o o b o o o b o o o o o o o o o o o o o o o o
+060  o o o o o o o o o o o o o o o o o o r r r r r r r r r r r r
+090  o o o b o o o b o o o b o o o b o o o o o o o o o o o o o o
+120  o o o o o o o o o o o o o o o o o o r r r r r r r r r r r r
+150  o b o o o b o o o b o o o b o o o o o o o o o o o o o o o o
+180  a a a a a a a a a a a a a a a a a a r r r r r r r r r r r r
+210  o o o o o o o o o o o o o o o o o o o o o o o o o o o o o o
+240  r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r
+270  r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r
+*/
+
+void usa() {
+  setAll(0, 0, 255);
+  boolean color = true;
+  for (uint16_t i = 31; i < 100; i+=2) {
+    if(i == 41 || i == 72) i+=19;
+    setPixel(i, 255, 255, 255);
+  }
+  setPixel(60, 0, 0, 255);
+  setPixel(90, 0, 0, 255);
+  //setPixel(120, 0, 0, 255);
+  for (uint16_t i = 12; i < 150; i++) {
+    if(i==30 || i==60 || i==90 || i==120) {
+      i+=12;
+      color = !color;
+    }
+    if(color) setPixel(i, 255, 0, 0);
+    else setPixel(i, 255, 255, 255);
+    
+  }
+  for (uint16_t i = 150; i < 180; i++) {
+    setPixel(i, 255, 255, 255);
+  }
+  for (uint16_t i = 180; i < 210; i++) {
+    setPixel(i, 255, 0, 0);
+  }
+  for (uint16_t i = 210; i < 240; i++) {
+    setPixel(i, 255, 255, 255);
+  }
+  for (uint16_t i = 240; i < NUM_LEDS; i++) {
+    setPixel(i, 255, 0, 0);
+  }
+}
+
+void party_3 (byte red, byte green, byte blue) {
+  // Flash
+  static uint16_t fOn = 4;
+  static uint16_t fOff = 12;
+  static uint16_t count = 0;
+  count++;
+  if (count == 1) {
+    for(uint16_t i = 0; i < 90; i++) {
+      setPixelGammaHue(i, 255, 255, 255);
+      setPixelGammaHue(i+21, 255, 255, 255);
+      setPixelGammaHue(i+210, 255, 255, 255);
+      setPixelGammaHue(i+231, 255, 255, 255);
+      if(i==8 || i == 38 || i == 68) i+=21;
+    }
+  }
+  else if (count == fOn) setAll(0,0,0);
+  else if (count == (fOn+fOff)) count = 0;
+
+  // Lineas
+  static uint16_t i = 90;
+  if(i < 120)
+    setPixel(i, 255, 0, 0);
+    i++; 
+    
+}
+
+void flash_text(byte red, byte green, byte blue) {
+  // Flash
+  static uint16_t fOn = 4;
+  static uint16_t fOff = 12;
+  static uint16_t count = 0;
+  count++;
+  if (count == 1) setAllGammaHue(red, green, blue);
+  else if (count == fOn) setAllGammaHue(0,0,0);
+  else if (count == (fOn+fOff)) count = 0;
+
+  // Texto
+  uint16_t des = 63;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    if (p[pos]) setPixel(pos+des, 0, 0, 0);
+  }
+  des = 69;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    if (u[pos]) setPixel(pos+des, 0, 0, 0);
+  }
+  des = 75;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    if (t[pos]) setPixel(pos+des, 0, 0, 0);
+  }
+  des = 81;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    if (o[pos]) setPixel(pos+des, 0, 0, 0);
   }
 }
 
