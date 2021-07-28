@@ -53,15 +53,15 @@ uint16_t transNoche2Timeout = 30;
 uint16_t noche2Timeout = 60;
 uint16_t transDiaTimeout = 60;
 
-//byte diaR = 244, diaG = 164, diaB = 50;
-//byte tardeR = 255, tardeG = 100, tardeB = 0;
-//byte noche1R = 50, noche1G = 50, noche1B = 70;
-//byte noche2R = 5, noche2G = 5, noche2B = 7;
+byte diaR = 244, diaG = 164, diaB = 50;
+byte tardeR = 255, tardeG = 100, tardeB = 0;
+byte noche1R = 50, noche1G = 50, noche1B = 70;
+byte noche2R = 5, noche2G = 5, noche2B = 7;
 
-byte diaR = 251, diaG = 218, diaB = 127;
-byte tardeR = 255, tardeG = 182, tardeB = 0;
-byte noche1R = 127, noche1G = 127, noche1B = 161;
-byte noche2R = 64, noche2G = 64, noche2B = 70;
+//byte diaR = 251, diaG = 218, diaB = 127;
+//byte tardeR = 255, tardeG = 182, tardeB = 0;
+//byte noche1R = 127, noche1G = 127, noche1B = 161;
+//byte noche2R = 64, noche2G = 64, noche2B = 70;
 
 byte posRGB[3] = {255, 0, 0};
 byte actRGB[3] = {255, 0, 0};
@@ -71,7 +71,9 @@ byte colorCircuito[3] = {diaR, diaG, diaB};
 
 void showStrip();
 void setPixel(int Pixel, byte red, byte green, byte blue);
+void setPixel_notHue(int Pixel, byte red, byte green, byte blue);
 void setAll(byte red, byte green, byte blue);
+void setAll_notHue(byte red, byte green, byte blue);
 void update_bt();
 void update_state();
 void update_leds();
@@ -91,8 +93,8 @@ void setup() {
 void loop() {
   update_bt();
   update_leds();
-  Serial.print("State: ");
-  Serial.print(state);
+  //Serial.print("State: ");
+  //Serial.print(state);
   //Serial.print(" - BT State: ");
   //Serial.print(bt_state);
   //Serial.println("");
@@ -199,7 +201,7 @@ void update_leds() {
       break;
     
     case CIRCUITO:
-      setAll(diaR, diaG, diaB);
+      setAll_notHue(diaR, diaG, diaB);
       state = DIA;
       break;
     
@@ -209,7 +211,7 @@ void update_leds() {
     
     case TRANS_TARDE:
       if (transition(diaR, diaG, diaB, tardeR, tardeG, tardeB, transTardeTimeout)) {
-        setAll(tardeR, tardeG, tardeB);
+        setAll_notHue(tardeR, tardeG, tardeB);
         state = TARDE;
       }
       break;
@@ -220,7 +222,7 @@ void update_leds() {
     
     case TRANS_NOCHE1:
       if (transition(tardeR, tardeG, tardeB, noche1R, noche1G, noche1B, transNoche1Timeout)) {
-        setAll (noche1R, noche1G, noche1B);
+        setAll_notHue(noche1R, noche1G, noche1B);
         state = NOCHE1;
       }
       break;
@@ -231,7 +233,7 @@ void update_leds() {
     
     case TRANS_NOCHE2:
       if (transition(noche1R, noche1G, noche1B, noche2R, noche2G, noche2B, transNoche2Timeout)) {
-        setAll(noche2R, noche2G, noche2B);
+        setAll_notHue(noche2R, noche2G, noche2B);
         state = NOCHE2;
       }
       break;
@@ -242,7 +244,7 @@ void update_leds() {
     
     case TRANS_DIA:
       if (transition(noche2R, noche2G, noche2B, diaR, diaG, diaB, transDiaTimeout)) {
-        setAll(diaR, diaG, diaB);
+        setAll_notHue(diaR, diaG, diaB);
         state = DIA;
       }
       break;
@@ -303,7 +305,7 @@ boolean transition(uint8_t iR, uint8_t iG, uint8_t iB, uint8_t fR, uint8_t fG, u
   ///////////////////////////////////////////
   /// Solucion utilizando 3 bytes por led ///
   ///////////////////////////////////////////
-  
+  /*
   //static uint16_t count = 0;
   static uint16_t count2 = 0;
   static byte r[NUM_LEDS] = {};
@@ -329,6 +331,16 @@ boolean transition(uint8_t iR, uint8_t iG, uint8_t iB, uint8_t fR, uint8_t fG, u
   }
   else count2++;
   if (r[0] != r[NUM_LEDS]) res = false;
+  */
+  ///////////////////////////////////////////
+  /// Solucion all transition not Hue     ///
+  ///////////////////////////////////////////
+  boolean res = false;
+  for(uint16_t i = 0; i < NUM_LEDS; i++) {
+    setPixel_notHue(i, colorCircuito[0], colorCircuito[1], colorCircuito[2]); 
+  }
+  res = update_color(iR, iG, iB, fR, fG, fB, tiempo);
+
   ////////////////////////////////////////////
   ////////////////////////////////////////////
   ////////////////////////////////////////////
@@ -369,7 +381,7 @@ boolean update_color(uint8_t iR, uint8_t iG, uint8_t iB, uint8_t fR, uint8_t fG,
   if (fB - iB > 0) dB = (uint16_t)((tiempo * (1000/timer2_ticks)) / (fB - iB));
   else dB = (uint16_t)((tiempo * (1000/timer2_ticks)) / (iB - fB));
 
-  if (auxR == dR - 1) {
+  if (auxR == (dR - 1)) {
     auxR = 0;
     if (colorCircuito[0] > fR) colorCircuito[0]--;
     else if (colorCircuito[0] < fR) colorCircuito[0]++;
@@ -378,7 +390,7 @@ boolean update_color(uint8_t iR, uint8_t iG, uint8_t iB, uint8_t fR, uint8_t fG,
     auxR++;
   }
 
-  if (auxG == dG - 1) {
+  if (auxG == (dG - 1)) {
     auxG = 0;
     if (colorCircuito[1] > fG) colorCircuito[1]--;
     else if (colorCircuito[1] < fG) colorCircuito[1]++;
@@ -387,7 +399,7 @@ boolean update_color(uint8_t iR, uint8_t iG, uint8_t iB, uint8_t fR, uint8_t fG,
     auxG++;
   }
 
-  if (auxB == dB - 1) {
+  if (auxB == (dB - 1)) {
     auxB = 0;
     if (colorCircuito[2] > fB) colorCircuito[2]--;
     else if (colorCircuito[2] < fB) colorCircuito[2]++;
@@ -511,12 +523,32 @@ void setPixel(int Pixel, byte red, byte green, byte blue) {
 #endif
 }
 
+void setPixel_notHue(int Pixel, byte red, byte green, byte blue) {
+#ifdef ADAFRUIT_NEOPIXEL_H
+  // NeoPixel
+  strip.setPixelColor(Pixel, strip.Color(red, green, blue));
+  //strip.setPixelColor(Pixel, strip.Color(red, green, blue));
+#endif
+#ifndef ADAFRUIT_NEOPIXEL_H
+  // FastLED
+  leds[Pixel].r = red;
+  leds[Pixel].g = green;
+  leds[Pixel].b = blue;
+#endif
+}
+
 void setAll(byte red, byte green, byte blue) {
   for (int i = 0; i < NUM_LEDS; i++ ) {
     setPixel(i, red, green, blue);
   }
 }
 
+
+void setAll_notHue(byte red, byte green, byte blue) {
+  for (int i = 0; i < NUM_LEDS; i++ ) {
+    setPixel_notHue(i, red, green, blue);
+  }
+}
 
 ///////////////
 // Gamma Hue //
