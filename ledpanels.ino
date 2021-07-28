@@ -70,10 +70,10 @@ byte actBrightness = BRIGHTNESS;
 byte colorCircuito[3] = {diaR, diaG, diaB};
 
 void showStrip();
-void setPixel(int Pixel, byte red, byte green, byte blue);
+void setPixelGammaHue(int Pixel, byte red, byte green, byte blue);
 void setPixel_notHue(int Pixel, byte red, byte green, byte blue);
+void setAllGammaHue(byte red, byte green, byte blue);
 void setAll(byte red, byte green, byte blue);
-void setAll_notHue(byte red, byte green, byte blue);
 void update_bt();
 void update_state();
 void update_leds();
@@ -197,11 +197,11 @@ void update_leds() {
       break;
     
     case ESTATICO:
-      setAll(actRGB[0], actRGB[1], actRGB[2]);
+      setAllGammaHue(actRGB[0], actRGB[1], actRGB[2]);
       break;
     
     case CIRCUITO:
-      setAll_notHue(diaR, diaG, diaB);
+      setAll(diaR, diaG, diaB);
       state = DIA;
       break;
     
@@ -211,7 +211,7 @@ void update_leds() {
     
     case TRANS_TARDE:
       if (transition(diaR, diaG, diaB, tardeR, tardeG, tardeB, transTardeTimeout)) {
-        setAll_notHue(tardeR, tardeG, tardeB);
+        setAll(tardeR, tardeG, tardeB);
         state = TARDE;
       }
       break;
@@ -222,7 +222,7 @@ void update_leds() {
     
     case TRANS_NOCHE1:
       if (transition(tardeR, tardeG, tardeB, noche1R, noche1G, noche1B, transNoche1Timeout)) {
-        setAll_notHue(noche1R, noche1G, noche1B);
+        setAll(noche1R, noche1G, noche1B);
         state = NOCHE1;
       }
       break;
@@ -233,7 +233,7 @@ void update_leds() {
     
     case TRANS_NOCHE2:
       if (transition(noche1R, noche1G, noche1B, noche2R, noche2G, noche2B, transNoche2Timeout)) {
-        setAll_notHue(noche2R, noche2G, noche2B);
+        setAll(noche2R, noche2G, noche2B);
         state = NOCHE2;
       }
       break;
@@ -244,7 +244,7 @@ void update_leds() {
     
     case TRANS_DIA:
       if (transition(noche2R, noche2G, noche2B, diaR, diaG, diaB, transDiaTimeout)) {
-        setAll_notHue(diaR, diaG, diaB);
+        setAll(diaR, diaG, diaB);
         state = DIA;
       }
       break;
@@ -419,8 +419,8 @@ void flash (byte red, byte green, byte blue) {
   static uint16_t fOff = 15;
   static uint16_t count = 0;
   count++;
-  if (count == 1) setAll(red, green, blue);
-  else if (count == fOn) setAll(0,0,0);
+  if (count == 1) setAllGammaHue(red, green, blue);
+  else if (count == fOn) setAllGammaHue(0,0,0);
   else if (count == (fOn+fOff)) count = 0;
 }
 
@@ -431,9 +431,9 @@ void party_1() {
     gFlag = false;
   }
   count++;
-  if (count == 1) setAll(255,0,0);
-  else if (count == 500) setAll(0, 255, 0);
-  else if (count == 1000) setAll(0, 0, 255);
+  if (count == 1) setAllGammaHue(255,0,0);
+  else if (count == 500) setAllGammaHue(0, 255, 0);
+  else if (count == 1000) setAllGammaHue(0, 0, 255);
   else if (count == 1500) count = 0;
 }
 
@@ -453,17 +453,17 @@ void party_1() {
 */
 
 void party_2(byte red, byte green, byte blue) {
-  setAll(0,0,0);
+  setAllGammaHue(0,0,0);
   for (uint16_t i = 0; i < NUM_LEDS; i++) {
-    if ( (i >= 31 && i <=35) || i == 38 || i == 42 || (i >= 45 && i <=49) || (i >= 52 && i <=56) ) setPixel(i, red, green, blue);
-    else if ( i == 61 || i == 65 || i == 68 || i == 72 || i == 77 || i == 82 || i == 86  ) setPixel(i, red, green, blue);
-    else if ( i == 91 || i == 95 || i == 98 || i == 102 || i == 107 || i == 112 || i == 116  ) setPixel(i, red, green, blue);
-    else if ( (i >= 121 && i <=125) || i == 128 || i == 132 || i == 137 || i == 142 || i == 146  ) setPixel(i, red, green, blue);
-    else if ( i == 151 || i == 158 || i == 162 || i == 167 || i == 172 || i == 176  ) setPixel(i, red, green, blue);
-    else if ( i == 181 || i == 188 || i == 192 || i == 197 || i == 202 || i == 206  ) setPixel(i, red, green, blue);
-    else if ( i == 211 || i == 218 || i == 222 || i == 227 || i == 232 || i == 236  ) setPixel(i, red, green, blue);
-    else if ( i == 241 || i == 257 ) setPixel(i, red, green, blue);
-    else if ( (i >= 248 && i <=252) || (i >= 262 && i <=266)) setPixel(i, red, green, blue);
+    if ( (i >= 31 && i <=35) || i == 38 || i == 42 || (i >= 45 && i <=49) || (i >= 52 && i <=56) ) setPixelGammaHue(i, red, green, blue);
+    else if ( i == 61 || i == 65 || i == 68 || i == 72 || i == 77 || i == 82 || i == 86  ) setPixelGammaHue(i, red, green, blue);
+    else if ( i == 91 || i == 95 || i == 98 || i == 102 || i == 107 || i == 112 || i == 116  ) setPixelGammaHue(i, red, green, blue);
+    else if ( (i >= 121 && i <=125) || i == 128 || i == 132 || i == 137 || i == 142 || i == 146  ) setPixelGammaHue(i, red, green, blue);
+    else if ( i == 151 || i == 158 || i == 162 || i == 167 || i == 172 || i == 176  ) setPixelGammaHue(i, red, green, blue);
+    else if ( i == 181 || i == 188 || i == 192 || i == 197 || i == 202 || i == 206  ) setPixelGammaHue(i, red, green, blue);
+    else if ( i == 211 || i == 218 || i == 222 || i == 227 || i == 232 || i == 236  ) setPixelGammaHue(i, red, green, blue);
+    else if ( i == 241 || i == 257 ) setPixelGammaHue(i, red, green, blue);
+    else if ( (i >= 248 && i <=252) || (i >= 262 && i <=266)) setPixelGammaHue(i, red, green, blue);
   }
 }
 
@@ -506,7 +506,7 @@ void showStrip() {
 #endif
 }
 
-void setPixel(int Pixel, byte red, byte green, byte blue) {
+void setPixelGammaHue(int Pixel, byte red, byte green, byte blue) {
 #ifdef ADAFRUIT_NEOPIXEL_H
   // NeoPixel
   strip.setPixelColor(Pixel, strip.Color(pgm_read_byte(&gamma8[red]), pgm_read_byte(&gamma8[green]), pgm_read_byte(&gamma8[blue])));
@@ -537,14 +537,14 @@ void setPixel_notHue(int Pixel, byte red, byte green, byte blue) {
 #endif
 }
 
-void setAll(byte red, byte green, byte blue) {
+void setAllGammaHue(byte red, byte green, byte blue) {
   for (int i = 0; i < NUM_LEDS; i++ ) {
-    setPixel(i, red, green, blue);
+    setPixelGammaHue(i, red, green, blue);
   }
 }
 
 
-void setAll_notHue(byte red, byte green, byte blue) {
+void setAll(byte red, byte green, byte blue) {
   for (int i = 0; i < NUM_LEDS; i++ ) {
     setPixel_notHue(i, red, green, blue);
   }
