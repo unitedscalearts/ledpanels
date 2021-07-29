@@ -101,6 +101,7 @@ void setup() {
   Serial.begin(9600);
   leds_init();
   timer2_init();
+  randomSeed(analogRead(0));
 }
 
 void loop() {
@@ -845,13 +846,14 @@ void police() {
   else if (pol_state == P_STROBE) {
     static boolean dir = 0; 
     if(count == 1) {
-      //barra_f(dir*13, 255, 255, 255);
+      /*//barra_f(dir*13, 255, 255, 255);
       barra_f(dir*13, dir*255, 0, (!dir)*255);
       barra_blanca(10);
       //fix//
       setPixel(288, 255, 255, 255);
       setPixel(289, 255, 255, 255);
-      //setAll(255, 255, 255);
+      */
+      setAll(255, 255, 255);
     }
     else if(count == 2) setAll(0, 0, 0);
     else if(count == 5) {
@@ -1037,6 +1039,25 @@ void usa() {
 }
 
 void party_3 (byte red, byte green, byte blue) {
+  static bool f_random = false;
+  static uint16_t rand_count = 0;
+  static uint16_t rand_flash_count = 0;
+  if( !(((uint32_t)random(0,3000))%500) ) f_random = true;
+  if(f_random) {
+    rand_count++;
+    if(rand_count == 1) setAll(255, 255, 255);
+    else if(rand_count == 2) setAll(0, 0, 0);
+    else if(rand_count == 4) {
+      rand_count = 0;
+      rand_flash_count++;
+    }
+    if (rand_flash_count == 18) {
+      f_random = false;
+      rand_count = 0;
+      rand_flash_count = 0;
+    }
+    return;
+  }
   // Flash
   static uint16_t fOn = 4;
   static uint16_t fOff = 12;
@@ -1051,15 +1072,194 @@ void party_3 (byte red, byte green, byte blue) {
       if(i==8 || i == 38 || i == 68) i+=21;
     }
   }
-  else if (count == fOn) setAll(0,0,0);
-  else if (count == (fOn+fOff)) count = 0;
+  else if (count == fOn) {
+    for(uint16_t i = 0; i < 90; i++) {
+      setPixel(i, 0, 0, 0);
+      setPixel(i+21, 0, 0, 0);
+      setPixel(i+210, 0, 0, 0);
+      setPixel(i+231, 0, 0, 0);
+      if(i==8 || i == 38 || i == 68) i+=21;
+    }
+  }
+  else if (count == (fOn+fOff)) {
+    fOn = (uint16_t) random(1, 5);
+    fOff = (uint16_t) random(1, 13);
+    count = 0;
+  }
 
-  // Lineas
+  // Flash-Fade
+  static byte ff_r = 0;
+  static byte ff_g = 0;
+  static byte ff_b = 255;
+  for(uint16_t j = 9; j < 21; j++) {
+    setPixel(j, ff_r, ff_g, ff_b);
+    setPixel(30+j, ff_r, ff_g, ff_b);
+    setPixel(60+j, ff_r, ff_g, ff_b);
+    setPixel(210+j, ff_r, ff_g, ff_b);
+    setPixel(240+j, ff_r, ff_g, ff_b);
+    setPixel(270+j, ff_r, ff_g, ff_b);
+  }
+  if(ff_r) ff_r--;
+  else ff_r = (byte) random(0,256);
+  if(ff_g) ff_g--;
+  else ff_g = (byte) random(0,256);
+  if(ff_b) ff_b--;
+  else ff_b = (byte) random(0,256);
+
+  // Lineas colores
+  static byte col_r[7] = {255,  255,  255,  255,  0,    0,    0   };
+  static byte col_g[7] = {0,    255,  0,    255,  255,  255,  0   };
+  static byte col_b[7] = {0,    0,    255,  255,  0,    255,  255 };
+  static byte aux = 0;
+  static bool col_dir = true;
+  static uint16_t col_pos = 150;
+  if(col_dir) {
+    col_pos++;
+    if(col_pos == 179) {
+      aux++;
+      aux%=7;
+      col_dir = !col_dir;
+    }
+  }
+  else {
+    col_pos--;
+    if(col_pos == 150) {
+      aux++;
+      aux%=7;
+      col_dir = !col_dir;
+    }
+  }
+  setPixel(col_pos, col_r[aux], col_b[aux], col_g[aux]);
+  setPixel(30+col_pos, col_r[aux], col_b[aux], col_g[aux]); // Linea extra
+
+  // Lineas tipo KITT
+  #define RIGHT 0
+  #define LEFT 1
+  #define MIDDLE 2
+  #define LEN 6
+  #define REP 1
+  static uint8_t p3_state = RIGHT;
+  static int16_t l_count = 0;
   static uint16_t i = 90;
-  if(i < 120)
-    setPixel(i, 255, 0, 0);
-    i++; 
-    
+  static uint8_t kitt_del = 0;
+  if(kitt_del < 1) {
+    kitt_del++;
+    return;
+  }
+  else kitt_del = 0;
+  if(p3_state == RIGHT) {
+    if(i < (120)) {
+      for(uint8_t j = 0; j < LEN; j++) {
+        if((i-j)>=90) {
+          setPixel(i-j, 255, 0, 0);
+          setPixel(30+i-j, 255, 0, 0); // Linea extra          
+        }
+        if((i-j-1)>=90) {
+          setPixel(i-j-1, 0, 0, 0);
+          setPixel(30+i-j-1, 0, 0, 0); // Linea extra
+        }
+      }
+      i++;
+    }
+    else {
+      p3_state = LEFT;
+      i-=LEN;
+    }
+  }
+  else if (p3_state == LEFT) {
+    if(i >= 90) {
+      for(uint8_t j = 0; j < LEN; j++) {
+        if((i+j)<120) {
+          setPixel(i+j, 255, 0, 0);
+          setPixel(30+i+j, 255, 0, 0); // Linea extra
+        }
+        if((i+j+1)<120) {
+          setPixel(i+j+1, 0, 0, 0);
+          setPixel(30+i+j+1, 0, 0, 0); // Linea extra
+        }
+      }
+      i--;
+    }
+    else {
+      p3_state = RIGHT;
+      i+=LEN;
+      l_count++;
+      if(l_count == REP) {
+        l_count = 0;
+        p3_state = MIDDLE;
+        i-=LEN;
+      }
+    }
+  }
+  else if (p3_state == MIDDLE) {
+    static bool mid_dir = true;
+    static bool turn = true;
+    if(mid_dir) {
+      if(i<105) {
+        for(uint8_t j = 0; j < LEN/2; j++) {
+          if((i-j)>=90) {
+            setPixel(i-j, 255, 0, 0);
+            setPixel(209-(i-j), 255, 0, 0);
+            // Linea extra
+            setPixel(30+i-j, 255, 0, 0);
+            setPixel(30+209-(i-j), 255, 0, 0);
+          }
+          if((i-j-1)>=90) {
+            setPixel(i-j-1, 0, 0, 0);
+            setPixel(209-(i-j-1), 0, 0, 0);
+            // Linea extra
+            setPixel(30+i-j-1, 0, 0, 0);
+            setPixel(30+209-(i-j-1), 0, 0, 0);
+          }
+         }
+        i++;
+      }
+      else mid_dir = false;  
+    }
+    else {
+      if(i>=90) {
+        for(uint8_t j = 0; j < LEN/2; j++) {
+          if((i+j)<120) {
+            setPixel(i+j, 255, 0, 0);
+            setPixel(209-(i+j), 255, 0, 0);
+            // Linea extra
+            setPixel(30+i+j, 255, 0, 0);
+            setPixel(30+209-(i+j), 255, 0, 0);
+          }
+          if((i+j+1)<120) {
+            setPixel(i+j+1, 0, 0, 0);
+            setPixel(209-(i+j+1), 0, 0, 0);
+            // Linea extra
+            setPixel(30+i+j+1, 0, 0, 0);
+            setPixel(30+209-(i+j+1), 0, 0, 0);            
+          }
+        }
+        i--;
+      }
+      else {
+        mid_dir = true;
+        turn = !turn;
+        if(turn) {
+          p3_state = LEFT;
+          for(uint16_t j = 0; j<LEN/2; j++) { // Fix
+            setPixel(90+j, 0, 0, 0);
+            setPixel(30+90+j, 0, 0, 0); // Linea extra
+          }
+          i = 119;
+          l_count = -1;
+        }
+        else {
+          p3_state = RIGHT;
+          for(uint16_t j = 0; j<LEN/2; j++) { // Fix
+            setPixel(119-j, 0, 0, 0);
+            setPixel(30+119-j, 0, 0, 0); // Linea extra
+          }
+          i = 90;
+        }
+      }
+    }
+  }
+  // No escribir nada abajo de KITT (por el return)
 }
 
 void flash_text(byte red, byte green, byte blue) {
