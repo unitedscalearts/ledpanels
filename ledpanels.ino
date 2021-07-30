@@ -36,7 +36,7 @@ void timer2_init();
 #define USA 17
 
 // Variables Globales
-volatile uint8_t state = ESTATICO;
+volatile uint8_t state = REPOSO;
 uint8_t timer2_ticks = 5;                  // Frecuencia de actualizacion (1 ~ 1ms)
 uint16_t timer2_count = 0;
 boolean timer2_flag = false;
@@ -93,6 +93,7 @@ void update_rainbow(byte *red, byte *green, byte *blue);
 void rainbow(byte vel);
 void rainbow_cycle(byte colorVel = 1, byte moveVel = 0);
 void text(byte red, byte green, byte blue);
+void text_ready(byte red, byte green, byte blue);
 void police();
 void police2();
 void posTime(uint16_t *timeout, uint8_t buff, uint8_t *bt_state, uint8_t tam);
@@ -212,6 +213,7 @@ void update_leds() {
    switch (state) {
     
     case REPOSO:
+      text_ready(actRGB[0], actRGB[1], actRGB[2]);
       break;
     
     case ESTATICO:
@@ -470,9 +472,9 @@ void party_1() {
   }
   count++;
   if (count == 1) setAllGammaHue(255,0,0);
-  else if (count == 500) setAllGammaHue(0, 255, 0);
-  else if (count == 1000) setAllGammaHue(0, 0, 255);
-  else if (count == 1500) count = 0;
+  else if (count == 300) setAllGammaHue(0, 255, 0);
+  else if (count == 600) setAllGammaHue(0, 0, 255);
+  else if (count == 900) count = 0;
 }
 
 ///////////
@@ -485,6 +487,12 @@ const bool a[25] = {  0, 0, 1, 0, 0,
                       1, 1, 1, 1, 1,
                       1, 0, 0, 0, 1 };
 
+const bool d[25] = {  1, 1, 1, 1, 0,
+                      1, 0, 0, 0, 1,
+                      1, 0, 0, 0, 1,
+                      1, 0, 0, 0, 1,
+                      1, 1, 1, 1, 0 };
+
 const bool e[25] = {  1, 1, 1, 1, 1,
                       1, 0, 0, 0, 0,
                       1, 1, 1, 0, 0,
@@ -496,6 +504,12 @@ const bool g[25] = {  0, 1, 1, 1, 1,
                       1, 0, 0, 1, 1,
                       1, 0, 0, 0, 1,
                       0, 1, 1, 1, 1 };
+
+const bool i[25] = {  1, 1, 1, 1, 1,
+                      0, 0, 1, 0, 0,
+                      0, 0, 1, 0, 0,
+                      0, 0, 1, 0, 0,
+                      1, 1, 1, 1, 1 };
 
 const bool j[25] = {  1, 1, 1, 1, 1,
                       0, 0, 0, 1, 0,
@@ -551,11 +565,12 @@ const bool u[25] = {  1, 0, 0, 0, 1,
                       1, 0, 0, 0, 1,
                       0, 1, 1, 1, 0 };
 
-const bool bs[25] = { 0, 0, 0, 0, 0,
-                      0, 0, 0, 0, 0,
-                      0, 0, 0, 0, 0,
-                      0, 0, 0, 0, 0,
-                      0, 0, 0, 0, 0 };
+const bool y[25] = {  1, 0, 0, 0, 1,
+                      0, 1, 0, 1, 0,
+                      0, 0, 1, 0, 0,
+                      0, 0, 1, 0, 0,
+                      0, 0, 1, 0, 0 };
+
 
 void text(byte red, byte green, byte blue) {
   setAll(0, 0, 0);
@@ -582,22 +597,22 @@ void text(byte red, byte green, byte blue) {
   des = 150;
   for(uint16_t pos = 0; pos < 25; pos++) {
     if (!(pos%5) && pos) des+= 25;
-    setPixelGammaHue(pos+des, q[pos]*red, q[pos]*green, q[pos]*blue);
+    if(q[pos]) setPixelGammaHue(pos+des, 255-red, 255-green, 255-blue);
   }
   des = 159;
   for(uint16_t pos = 0; pos < 25; pos++) {
     if (!(pos%5) && pos) des+= 25;
-    setPixelGammaHue(pos+des, l[pos]*red, l[pos]*green, l[pos]*blue);
+    if(l[pos]) setPixelGammaHue(pos+des, 255-red, 255-green, 255-blue);
   }
   des = 165;
   for(uint16_t pos = 0; pos < 25; pos++) {
     if (!(pos%5) && pos) des+= 25;
-    setPixelGammaHue(pos+des, e[pos]*red, e[pos]*green, e[pos]*blue);
+    if(e[pos]) setPixelGammaHue(pos+des, 255-red, 255-green, 255-blue);
   }
   des = 171;
   for(uint16_t pos = 0; pos < 25; pos++) {
     if (!(pos%5) && pos) des+= 25;
-    setPixelGammaHue(pos+des, e[pos]*red, e[pos]*green, e[pos]*blue);
+    if(e[pos]) setPixelGammaHue(pos+des, 255-red, 255-green, 255-blue);
   }
   /*
   for(uint16_t pos = 0; pos < 25; pos++) {
@@ -1065,10 +1080,10 @@ void party_3 (byte red, byte green, byte blue) {
   count++;
   if (count == 1) {
     for(uint16_t i = 0; i < 90; i++) {
-      setPixelGammaHue(i, 255, 255, 255);
-      setPixelGammaHue(i+21, 255, 255, 255);
-      setPixelGammaHue(i+210, 255, 255, 255);
-      setPixelGammaHue(i+231, 255, 255, 255);
+      setPixelGammaHue(i, red, green, blue);
+      setPixelGammaHue(i+21, red, green, blue);
+      setPixelGammaHue(i+210, red, green, blue);
+      setPixelGammaHue(i+231, red, green, blue);
       if(i==8 || i == 38 || i == 68) i+=21;
     }
   }
@@ -1292,6 +1307,60 @@ void flash_text(byte red, byte green, byte blue) {
   for(uint16_t pos = 0; pos < 25; pos++) {
     if (!(pos%5) && pos) des+= 25;
     if (o[pos]) setPixel(pos+des, 0, 0, 0);
+  }
+}
+
+void text_ready(byte red, byte green, byte blue) {
+  setAll(0, 0, 0);
+  uint16_t des = 0;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    setPixelGammaHue(pos+des, r[pos]*red, r[pos]*green, r[pos]*blue);
+  }
+  des = 6;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    setPixelGammaHue(pos+des, e[pos]*red, e[pos]*green, e[pos]*blue);
+  }
+  des = 12;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    setPixelGammaHue(pos+des, a[pos]*red, a[pos]*green, a[pos]*blue);
+  }
+  des = 18;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    setPixelGammaHue(pos+des, d[pos]*red, d[pos]*green, d[pos]*blue);
+  }
+  des = 24;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    setPixelGammaHue(pos+des, y[pos]*red, y[pos]*green, y[pos]*blue);
+  }
+  des = 150;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    if(l[pos]) setPixelGammaHue(pos+des, 255-red, 255-green, 255-blue);
+  }
+  des = 156;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    if(i[pos]) setPixelGammaHue(pos+des, 255-red, 255-green, 255-blue);
+  }
+  des = 162;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    if(s[pos]) setPixelGammaHue(pos+des, 255-red, 255-green, 255-blue);
+  }
+  des = 168;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    if(t[pos]) setPixelGammaHue(pos+des, 255-red, 255-green, 255-blue);
+  }
+  des = 174;
+  for(uint16_t pos = 0; pos < 25; pos++) {
+    if (!(pos%5) && pos) des+= 25;
+    if(o[pos]) setPixelGammaHue(pos+des, 255-red, 255-green, 255-blue);
   }
 }
 
